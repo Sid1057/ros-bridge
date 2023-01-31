@@ -12,6 +12,8 @@ Classes to handle Carla lidars
 """
 
 import numpy
+import numpy as np
+import time
 
 from carla_ros_bridge.sensor import Sensor, create_cloud
 
@@ -73,13 +75,36 @@ class Lidar(Sensor):
             PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
             PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
             PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
-            PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1)
+            PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
+            PointField(name='ring', offset=16, datatype=PointField.UINT16, count=1),
+            PointField(name='time', offset=18, datatype=PointField.FLOAT32, count=1)
         ]
 
         lidar_data = numpy.fromstring(
             bytes(carla_lidar_measurement.raw_data), dtype=numpy.float32)
         lidar_data = numpy.reshape(
             lidar_data, (int(lidar_data.shape[0] / 4), 4))
+
+        ring = None
+        times = None
+
+        for i in range(int(self.carla_actor.attributes.get('channels'))):
+            current_ring_points_count = carla_lidar_measurement.get_point_count(i)
+            ring = numpy.vstack((ring, numpy.full((current_ring_points_count, 1), i)))
+            times = numpy.hstack((
+                    times, 
+                    np.linspace(
+                        carla_lidar_measurement.timestamp,
+                        carla_lidar_measurement.timestamp+0.1,
+                        num=current_ring_points_count, dtype=np.float32)))
+
+        ring = numpy.delete(ring, 0, axis=0)
+        times = times.reshape(-1, 1)
+        times = numpy.delete(times, 0, axis=0)
+
+        lidar_data = numpy.hstack((lidar_data, ring, times))
+
+
         # we take the opposite of y axis
         # (as lidar point are express in left handed coordinate system, and ros need right handed)
         lidar_data[:, 1] *= -1

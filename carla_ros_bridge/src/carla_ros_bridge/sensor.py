@@ -304,7 +304,7 @@ def create_cloud(header, fields, points):
     return PointCloud2(header=header,
                        height=1,
                        width=len(points),
-                       is_dense=False,
+                       is_dense=True,
                        is_bigendian=False,
                        fields=fields,
                        point_step=cloud_struct.size,
