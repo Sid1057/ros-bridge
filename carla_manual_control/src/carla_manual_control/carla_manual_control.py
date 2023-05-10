@@ -180,7 +180,7 @@ class KeyboardControl(object):
             "/carla/{}/vehicle_control_manual_override".format(self.role_name),
             qos_profile=fast_latched_qos)
 
-        self.vehicle_control_manual_override = False
+        self.vehicle_control_manual_override = True
 
         self.auto_pilot_enable_publisher = self.node.new_publisher(
             Bool,
